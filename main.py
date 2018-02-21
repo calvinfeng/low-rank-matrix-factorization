@@ -9,13 +9,7 @@ def main():
     training_rating_mat, test_rating_mat = converter.get_rating_matrices()
 
     factorizer = lowrank.Factorizer(training_rating_mat, test_rating_mat)
-    grad_u, grad_m = factorizer.gradients()
-    print 'Done with analytical gradients'
-    num_grad_u = factorizer.num_gradients()
-    print 'Done with numerical gradients'
-
-    print np.matrix.round(grad_u - num_grad_u, decimals=5)
-    print np.matrix.round(grad_m - num_grad_m, decimals=5)
+    factorizer.train()
 
 
 if __name__ == '__main__':

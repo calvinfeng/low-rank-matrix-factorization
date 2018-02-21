@@ -1,5 +1,5 @@
 import numpy as np
-
+import progress_bar
 
 class Factorizer(object):
     def __init__(self, training_rating_matrix, test_rating_matrix, reg=0.0, learning_rate=1e-5, feature_dim=10):
@@ -31,19 +31,26 @@ class Factorizer(object):
         """
         pred_R = np.dot(self.U, self.M.T)
 
-        loss = 0
+        loss, rmse, num_test_ratings = 0, 0, 0
         itr = np.nditer(self.R, flags=['multi_index'])  # itr stands for iterator
         while not itr.finished:
-            if self.R[itr.multi_index] != 0:
-                diff = self.R[itr.multi_index] - pred_R[itr.multi_index]
-                loss += 0.5 * diff * diff
+            # When computing loss, only consider training data
+            if self.R[itr.multi_index] != 0 and self.R_test[itr.multi_index] == 0:
+                loss += 0.5 * (self.R[itr.multi_index] - pred_R[itr.multi_index])**2
+
+            # When computing RMSE, only consider test data
+            if self.R_test[itr.multi_index] != 0:
+                rmse += (self.R_test[itr.multi_index] - pred_R[itr.multi_index])**2
+                num_test_ratings += 1
+
             itr.iternext()
 
         # Factor in regularizations
         loss += self.reg * np.sum(self.U * self.U) / 2
         loss += self.reg * np.sum(self.M * self.M) / 2
+        rmse = np.sqrt(rmse / num_test_ratings)
 
-        return loss
+        return loss, rmse
 
     def gradients(self):
         grad_R = np.dot(self.U, self.M.T) - self.R
@@ -52,11 +59,25 @@ class Factorizer(object):
         grad_m = np.dot(grad_R.T, self.U) + (self.reg * self.M)
 
         return grad_u, grad_m
-        
+
+    def train(self, steps=200, epoch=10):
+        benchmarks = []
+        for step in range(steps):
+            if step % epoch == 0:
+                loss, rmse = self.loss()
+                benchmarks.append((step + 1, loss, rmse))
+            grad_u, grad_m = self.gradients()
+            self.U = self.U - (self.learning_rate * grad_u)
+            self.M = self.M - (self.learning_rate * grad_m)
+
+        loss, rmse = self.loss()
+        benchmarks.append((step + 1, loss, rmse))
+        return benchmarks
+
     def num_gradients(self, h=1e-5):
-        """Compute numerical gradients for U and M. Please be cautious of this function; it has extremely bad 
+        """Compute numerical gradients for U and M. Please be cautious of this function; it has extremely bad
         time complexity. It is meant for testing purpose.
-        
+
         :param float h: Small delta for computing the slope at a given point.
         """
         num_grad_u = np.zeros(self.U.shape)
@@ -73,10 +94,10 @@ class Factorizer(object):
             old_val = self.U[indices]
 
             self.U[indices] = old_val + h
-            fuph = self.loss()
+            fuph, _ = self.loss()
 
             self.U[indices] = old_val - h
-            fumh = self.loss()
+            fumh, _ = self.loss()
 
             self.U[indices] = old_val
             num_grad_u[indices] = (fuph - fumh) / (2 * h)
@@ -91,10 +112,10 @@ class Factorizer(object):
             old_val = self.M[indices]
 
             self.M[indices] = old_val + h
-            fmph = self.loss()
+            fmph, _ = self.loss()
 
             self.M[indices] = old_val - h
-            fmmh = self.loss()
+            fmmh, _ = self.loss()
 
             self.M[indices] = old_val
             num_grad_m[indices] = (fmph - fmmh) / (2 * h)
