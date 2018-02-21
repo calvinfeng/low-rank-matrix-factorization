@@ -24,6 +24,7 @@ class Factorizer(object):
         self.M = np.random.rand(self.movie_dim, self.feature_dim)
         self.R = training_rating_matrix
         self.R_test = test_rating_matrix
+        print "Factorizer is instantiated with U: %s and M: %s" % (self.U.shape, self.M.shape)
 
     def loss(self):
         """Computes L2 loss
@@ -46,20 +47,17 @@ class Factorizer(object):
 
     def gradients(self):
         grad_R = np.dot(self.U, self.M.T) - self.R
-
-        itr = np.nditer(grad_R, flags=['multi_index'])
-        while not itr.finished:
-            if self.R[itr.multi_index] == 0:
-                grad_R[itr.multi_index] = 0
-            itr.iternext()
-
+        grad_R[self.R == 0] = 0
         grad_u = np.dot(grad_R, self.M) + (self.reg * self.U)
         grad_m = np.dot(grad_R.T, self.U) + (self.reg * self.M)
 
         return grad_u, grad_m
-
+        
     def num_gradients(self, h=1e-5):
-        """Compute numerical gradients for U and M
+        """Compute numerical gradients for U and M. Please be cautious of this function; it has extremely bad 
+        time complexity. It is meant for testing purpose.
+        
+        :param float h: Small delta for computing the slope at a given point.
         """
         num_grad_u = np.zeros(self.U.shape)
         num_grad_m = np.zeros(self.M.shape)
@@ -67,7 +65,6 @@ class Factorizer(object):
         U_dim, L_dim = self.U.shape
         M_dim, L_dim = self.M.shape
 
-        progress = 0
         itr = np.nditer(num_grad_u, flags=['multi_index'])
         while not itr.finished:
             indices = itr.multi_index
@@ -84,11 +81,7 @@ class Factorizer(object):
             self.U[indices] = old_val
             num_grad_u[indices] = (fuph - fumh) / (2 * h)
 
-            progress += 1
-            print progress
             itr.iternext()
-
-        return num_grad_u
 
         itr = np.nditer(num_grad_m, flags=['multi_index'])
         while not itr.finished:

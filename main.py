@@ -15,7 +15,7 @@ def main():
     print 'Done with numerical gradients'
 
     print np.matrix.round(grad_u - num_grad_u, decimals=5)
-    # print np.matrix.round(grad_m - num_grad_m, decimals=5)
+    print np.matrix.round(grad_m - num_grad_m, decimals=5)
 
 
 if __name__ == '__main__':
