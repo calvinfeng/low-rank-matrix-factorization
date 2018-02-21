@@ -43,3 +43,69 @@ class Factorizer(object):
         loss += self.reg * np.sum(self.M * self.M) / 2
 
         return loss
+
+    def gradients(self):
+        grad_R = np.dot(self.U, self.M.T) - self.R
+
+        itr = np.nditer(grad_R, flags=['multi_index'])
+        while not itr.finished:
+            if self.R[itr.multi_index] == 0:
+                grad_R[itr.multi_index] = 0
+            itr.iternext()
+
+        grad_u = np.dot(grad_R, self.M) + (self.reg * self.U)
+        grad_m = np.dot(grad_R.T, self.U) + (self.reg * self.M)
+
+        return grad_u, grad_m
+
+    def num_gradients(self, h=1e-5):
+        """Compute numerical gradients for U and M
+        """
+        num_grad_u = np.zeros(self.U.shape)
+        num_grad_m = np.zeros(self.M.shape)
+
+        U_dim, L_dim = self.U.shape
+        M_dim, L_dim = self.M.shape
+
+        progress = 0
+        itr = np.nditer(num_grad_u, flags=['multi_index'])
+        while not itr.finished:
+            indices = itr.multi_index
+
+            # Store the old value
+            old_val = self.U[indices]
+
+            self.U[indices] = old_val + h
+            fuph = self.loss()
+
+            self.U[indices] = old_val - h
+            fumh = self.loss()
+
+            self.U[indices] = old_val
+            num_grad_u[indices] = (fuph - fumh) / (2 * h)
+
+            progress += 1
+            print progress
+            itr.iternext()
+
+        return num_grad_u
+
+        itr = np.nditer(num_grad_m, flags=['multi_index'])
+        while not itr.finished:
+            indices = itr.multi_index
+
+            # Store the old value
+            old_val = self.M[indices]
+
+            self.M[indices] = old_val + h
+            fmph = self.loss()
+
+            self.M[indices] = old_val - h
+            fmmh = self.loss()
+
+            self.M[indices] = old_val
+            num_grad_m[indices] = (fmph - fmmh) / (2 * h)
+
+            itr.iternext()
+
+        return num_grad_u, num_grad_m
