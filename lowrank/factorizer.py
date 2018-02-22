@@ -1,8 +1,9 @@
 import numpy as np
-import progress_bar
+from progress_bar import ProgressBar
+
 
 class Factorizer(object):
-    def __init__(self, training_rating_matrix, test_rating_matrix, reg=0.0, learning_rate=1e-5, feature_dim=10):
+    def __init__(self, training_rating_matrix, test_rating_matrix, reg=0.0, feature_dim=10):
         """Instantiate the necessary matrices to perform low rank factorization
 
         :param training_rating_matrix numpy.array: A sparse numpy matrix that holds ratings from every user on every movie.
@@ -15,7 +16,6 @@ class Factorizer(object):
             raise "dimension of training set does not match up with that of test set"
 
         self.reg = reg
-        self.learning_rate = learning_rate
         self.feature_dim = feature_dim
         self.user_dim, self.movie_dim = training_rating_matrix.shape
 
@@ -39,7 +39,7 @@ class Factorizer(object):
                 loss += 0.5 * (self.R[itr.multi_index] - pred_R[itr.multi_index])**2
 
             # When computing RMSE, only consider test data
-            if self.R_test[itr.multi_index] != 0:
+            if self.R_test[itr.multi_index] != 0 and self.R[itr.multi_index] == 0:
                 rmse += (self.R_test[itr.multi_index] - pred_R[itr.multi_index])**2
                 num_test_ratings += 1
 
@@ -60,18 +60,21 @@ class Factorizer(object):
 
         return grad_u, grad_m
 
-    def train(self, steps=200, epoch=10):
+    def train(self, learning_rate=1e-5, steps=200, epoch=10):
         benchmarks = []
+        progress = ProgressBar('training', steps)
         for step in range(steps):
             if step % epoch == 0:
                 loss, rmse = self.loss()
                 benchmarks.append((step + 1, loss, rmse))
+                progress.report(step, loss)
             grad_u, grad_m = self.gradients()
-            self.U = self.U - (self.learning_rate * grad_u)
-            self.M = self.M - (self.learning_rate * grad_m)
+            self.U = self.U - (learning_rate * grad_u)
+            self.M = self.M - (learning_rate * grad_m)
 
         loss, rmse = self.loss()
         benchmarks.append((step + 1, loss, rmse))
+        progress.complete()
         return benchmarks
 
     def num_gradients(self, h=1e-5):

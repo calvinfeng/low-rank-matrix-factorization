@@ -67,3 +67,16 @@ class MatrixConverter(object):
             test_mat.append(test_row)
 
         return np.array(training_mat), np.array(test_mat)
+
+    def get_movie_feature_map(self, movie_latent_mat):
+        """
+
+        :param numpy.array movie_latent_mat: Factorized low rank matrix of movies to latent features
+        """
+        feature_map = dict()
+        M, _ = movie_latent_mat.shape
+        for m in range(M):
+            movieId = self.movie_idx_to_id[m]
+            feature_map[movieId] = movie_latent_mat[m]
+
+        return feature_map

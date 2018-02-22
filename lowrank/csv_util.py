@@ -43,3 +43,23 @@ def load_user_ratings(filepath, max_num_user=10000):
             return reduced_user_ratings
 
     return reduced_user_ratings
+
+def unload_movie_features(filepath, feature_dim, movie_features):
+    """
+
+    :param string filepath:
+    :param int feature_dim:
+    :param dict movie_features:
+    """
+    with open(filepath, 'wt') as file:
+        writer = csv.writer(file)
+        header = ['movieId']
+        for i in range(feature_dim):
+            header.append('f' + str(i + 1))
+        writer.writerow(tuple(header))
+
+        for movieId in movie_features:
+            row = [str(movieId)]
+            for k in range(len(movie_features[movieId])):
+                row.append(str(movie_features[movieId][k]))
+            writer.writerow(tuple(row))
