@@ -16,3 +16,8 @@ pip install -r requirements.txt
 ```
 
 By now you should have `numpy`, `matplotlib` and `jupyter` installed.
+
+## Run Jupyter
+```
+jupyter notebook
+```
