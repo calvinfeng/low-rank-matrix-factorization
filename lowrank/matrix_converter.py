@@ -69,7 +69,7 @@ class MatrixConverter(object):
         return np.array(training_mat), np.array(test_mat)
 
     def get_movie_feature_map(self, movie_latent_mat):
-        """
+        """Returns a dictionary of movie ID mapping to the movie's latent feature vector
 
         :param numpy.array movie_latent_mat: Factorized low rank matrix of movies to latent features
         """
