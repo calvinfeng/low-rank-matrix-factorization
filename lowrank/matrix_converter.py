@@ -80,3 +80,17 @@ class MatrixConverter(object):
             feature_map[movieId] = movie_latent_mat[m]
 
         return feature_map
+
+    def export_movie_latent_matrix(self, movie_latent_mat, filepath):
+        """Exports movie latent matrix to a CSV file where each row starts with movie ID and the rest are feature values
+        seperated by comma
+        :param numpy.array movie_latent_mat: Factorized low rank matrix of movies to latent features
+        :param string filepath: Path for exporting CSV
+        """
+        feature_map = dict()
+        M, K = movie_latent_mat.shape
+        for m in range(M):
+            movieId = self.movie_idx_to_id[m]
+            feature_map[movieId] = movie_latent_mat[m]
+
+        unload_movie_features(filepath, feature_dim=K, movie_features=feature_map)
